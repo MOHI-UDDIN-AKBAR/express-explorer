@@ -1,0 +1,7 @@
+body {
+  max-width: 1000px;
+  margin: 0 auto;
+  color: red;
+  display: grid;
+  place-items: center;
+}
