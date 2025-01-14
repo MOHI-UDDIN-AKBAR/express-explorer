@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const router = require("./routes/index.js");
 
 const app = express();
 
@@ -17,7 +18,6 @@ app.use(
     reviver: (key, value) => (key === "date" ? new Date(value) : value),
   })
 );
-console.log(path.join(__dirname, "public"));
 
 app.use(
   "/static",
@@ -34,5 +34,7 @@ app.use(
     },
   })
 );
+
+app.use(router);
 
 module.exports = app;
