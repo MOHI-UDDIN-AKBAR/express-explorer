@@ -1,27 +1,35 @@
 const express = require("express");
-const router = express.Router();
 
-const middleWareOne = (req, res, next) => {
-  console.log("MiddleWare One");
-  next();
-};
+// Example One: Router without a base path
+const routerOne = express.Router();
 
-const middleWareTwo = (req, res, next) => {
-  console.log("MiddleWare Two");
-  next();
-};
-
-router.use((req, res, next) => {
-  console.log(`Global MiddleWare`);
+routerOne.use((req, res, next) => {
+  console.log("Middleware that applies to all routes in routerOne");
   next();
 });
 
-router.get("/", middleWareOne, (req, res) => {
-  res.send("Hello World");
+routerOne.get("/", (req, res) => {
+  res.send("Home Page");
 });
 
-router.get("/about", middleWareOne, middleWareTwo, (req, res) => {
+routerOne.get("/about", (req, res) => {
   res.send("About Page");
 });
 
-module.exports = router;
+// Example Two: Router with a base path `/admin`
+const routerTwo = express.Router();
+
+routerTwo.use("/admin", (req, res, next) => {
+  console.log("Admin middleware triggered");
+  next();
+});
+
+routerTwo.get("/admin", (req, res) => {
+  res.send("Admin Dashboard");
+});
+
+routerTwo.get("/admin/settings", (req, res) => {
+  res.send("Admin Settings");
+});
+
+module.exports = { routerOne, routerTwo };
