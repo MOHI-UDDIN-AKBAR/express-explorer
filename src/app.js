@@ -1,8 +1,14 @@
 const express = require("express");
 const path = require("path");
-const router = require("./routes/index.js");
+const { routerOne, routerTwo } = require("./routes/index.js");
 
 const app = express();
+
+app.locals.title = "My App";
+app.locals.email = "admin@gmail.com";
+
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
 
 app.use(
   express.json({
@@ -35,6 +41,11 @@ app.use(
   })
 );
 
-app.use(router);
+// app.use(routerOne);
+// app.use(routerTwo);
+
+app.get("/", (req, res) => {
+  res.render("home");
+});
 
 module.exports = app;
