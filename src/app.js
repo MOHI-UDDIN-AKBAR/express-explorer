@@ -10,6 +10,10 @@ app.locals.email = "admin@gmail.com";
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+app.set("etag", "strong");
+
+app.set("json spaces", 4);
+
 app.use(
   express.json({
     limit: "1mb",
@@ -46,6 +50,10 @@ app.use(
 
 app.get("/", (req, res) => {
   res.render("home");
+});
+
+app.get("/json", (req, res) => {
+  res.status(200).json({ name: "Samir", id: 1 });
 });
 
 module.exports = app;
