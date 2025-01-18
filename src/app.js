@@ -7,6 +7,7 @@ const app = express();
 app.locals.title = "My App";
 app.locals.email = "admin@gmail.com";
 
+app.set("strict routing", true);
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
@@ -54,6 +55,14 @@ app.get("/", (req, res) => {
 
 app.get("/json", (req, res) => {
   res.status(200).json({ name: "Samir", id: 1 });
+});
+
+app.get("/test", (req, res) => {
+  res.send("This is /test route.");
+});
+
+app.get("/test/", (req, res) => {
+  res.send("This is /test/ route.");
 });
 
 module.exports = app;
