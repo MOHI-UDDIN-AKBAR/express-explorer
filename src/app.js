@@ -15,6 +15,8 @@ app.set("etag", "strong");
 
 app.set("json spaces", 4);
 
+app.set("json escape", true);
+
 app.use(
   express.json({
     limit: "1mb",
@@ -63,6 +65,13 @@ app.get("/test", (req, res) => {
 
 app.get("/test/", (req, res) => {
   res.send("This is /test/ route.");
+});
+
+app.get("/api/data", (req, res) => {
+  const data = {
+    text: '<script>alert("XSS")</script>',
+  };
+  res.json(data);
 });
 
 module.exports = app;
