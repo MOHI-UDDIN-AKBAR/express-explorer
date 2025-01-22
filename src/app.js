@@ -74,7 +74,13 @@ app.get("/api/data", (req, res) => {
   res.json(data);
 });
 
-app.set("trust proxy", true);
+app.disable("trust proxy");
+console.log(app.get("trust proxy"));
+console.log(app.disabled("trust proxy"));
+
+app.enable("trust proxy");
+console.log(app.get("trust proxy"));
+console.log(app.enabled("trust proxy"));
 
 app.get("/ip", (req, res) => {
   res.send(`Client IP: ${req.ip}`);
