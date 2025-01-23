@@ -52,6 +52,8 @@ app.use(
 // app.use(routerTwo);
 
 app.get("/", (req, res) => {
+  res.append("Link", ["<http://localhost/>", "<http://localhost:3000/>"]);
+  res.append("Warning", "199 Miscellaneous warning");
   res.render("home");
 });
 
@@ -85,5 +87,7 @@ console.log(app.enabled("trust proxy"));
 app.get("/ip", (req, res) => {
   res.send(`Client IP: ${req.ip}`);
 });
+
+app.get("/hello/ok", (req, res) => res.send(`path: ${req.path}`));
 
 module.exports = app;
