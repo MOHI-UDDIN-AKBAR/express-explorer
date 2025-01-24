@@ -90,4 +90,28 @@ app.get("/ip", (req, res) => {
 
 app.get("/hello/ok", (req, res) => res.send(`path: ${req.path}`));
 
+let userCredits = 5;
+app.get("/download", (req, res) => {
+  const options = {
+    dotfiles: "deny",
+  };
+  if (userCredits > 0) {
+    res.download(
+      path.join(__dirname, "./assets/images/Clouds.jpg"),
+      "image.jpg",
+      options,
+      (err) => {
+        if (err) {
+          console.error("Download failed:", err);
+        } else {
+          console.log("File downloaded successfully");
+          userCredits -= 1;
+        }
+      }
+    );
+  } else {
+    res.status(403).send("Not enough credits to download the file");
+  }
+});
+
 module.exports = app;
