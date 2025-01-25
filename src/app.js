@@ -114,4 +114,19 @@ app.get("/download", (req, res) => {
   }
 });
 
+app.set("jsonp callback name", "cb");
+app.get("/jsonp", (req, res) => {
+  res.jsonp({ user: "tobi" });
+});
+
+app.get("/old-route", (req, res) => {
+  res.redirect("/new-route");
+});
+
+app.get("/html-text", (req, res) => {
+  const buffer = Buffer.from("<h1>Hello World</h1>");
+  res.set("Content-Type", "text/html");
+  res.send(buffer);
+});
+
 module.exports = app;
