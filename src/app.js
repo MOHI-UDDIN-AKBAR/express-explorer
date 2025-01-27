@@ -157,4 +157,15 @@ app.get("/files/:name", (req, res, next) => {
   });
 });
 
+app.get("/home-template", (req, res) => {
+  const locals = {
+    title: "My Express App",
+    isLoggedIn: true,
+    username: "rifat",
+    tasks: ["Task One", "Task Two", "Task Three"],
+  };
+
+  res.render("home", locals);
+});
+
 module.exports = app;
