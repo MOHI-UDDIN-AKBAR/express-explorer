@@ -129,4 +129,32 @@ app.get("/html-text", (req, res) => {
   res.send(buffer);
 });
 
+app.get("/files/:name", (req, res, next) => {
+  const options = {
+    root: path.join(__dirname, "assets", "images"),
+    maxAge: "1d",
+    dotfiles: "deny",
+    headers: {
+      "x-Timestamp": Date.now(),
+      "x-sent": true,
+      "Content-Disposition": "inline",
+    },
+    lastModified: true,
+    cacheControl: true,
+    immutable: false,
+    acceptRanges: true,
+  };
+
+  const fileName = req.params.name;
+
+  res.sendFile(fileName, options, (err) => {
+    if (err) {
+      console.error("Error:", err);
+      res.status(err.status || 500).send("File not found");
+    } else {
+      console.log("File sent:", fileName);
+    }
+  });
+});
+
 module.exports = app;
