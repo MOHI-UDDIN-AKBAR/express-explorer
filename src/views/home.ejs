@@ -4,7 +4,17 @@
     <title><%= title %></title>
   </head>
   <body>
-    <h1>Welcome to <%= title %></h1>
-    <p>Contact: <%= email %></p>
+    <h1>Welcome to home page.</h1>
+    <% if(isLoggedIn) { %>
+    <h2>Hello, <%= username %></h2>
+    <p>Your task are:</p>
+    <ul>
+      <% tasks.forEach(task=>{ %>
+      <li><%= task %></li>
+      <% }) %>
+    </ul>
+    <% }else{ %>
+    <p>Oops! You must login.</p>
+    <% } %>
   </body>
 </html>
