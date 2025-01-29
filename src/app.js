@@ -1,171 +1,34 @@
 const express = require("express");
+const multer = require("multer");
 const path = require("path");
-const { routerOne, routerTwo } = require("./routes/index.js");
-
 const app = express();
 
-app.locals.title = "My App";
-app.locals.email = "admin@gmail.com";
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
-app.set("strict routing", true);
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
+const storageDestination = multer.diskStorage({
+  destination: path.join(__dirname, "assets"),
+  filename: (req, file, callback) => {
+    callback(null, file.originalname);
+  },
+});
 
-app.set("etag", "strong");
-
-app.set("json spaces", 4);
-
-app.set("json escape", true);
-
-app.use(
-  express.json({
-    limit: "1mb",
-    type: "application/json",
-    strict: true,
-    inflate: true,
-    verify: (req, res, buf, encoding) => {
-      if (buf && buf.length > 0) {
-        console.log("Received JSON payload:", buf.toString());
-      }
-    },
-    reviver: (key, value) => (key === "date" ? new Date(value) : value),
-  })
-);
-
-app.use(
-  "/static",
-  express.static(path.join(__dirname, "public"), {
-    dotfiles: "deny",
-    etag: true,
-    extensions: ["html", "css"],
-    index: "index.html",
-    lastModified: true,
-    maxAge: "1d",
-    redirect: true,
-    setHeaders: (res, path, stats) => {
-      res.set("X-Timestamp", Date.now());
-    },
-  })
-);
-
-// app.use(routerOne);
-// app.use(routerTwo);
+const upload = multer({ storage: storageDestination });
 
 app.get("/", (req, res) => {
-  res.append("Link", ["<http://localhost/>", "<http://localhost:3000/>"]);
-  res.append("Warning", "199 Miscellaneous warning");
-  res.render("home");
+  res.send(
+    `<form action="/profile" method="post" enctype="multipart/form-data">
+      <input type="file" name="avatar" />
+      <button type="submit">Upload Avatar</button>
+    </form>`
+  );
 });
 
-app.get("/json", (req, res) => {
-  res.status(200).json({ name: "Samir", id: 1 });
-});
-
-app.get("/test", (req, res) => {
-  res.send("This is /test route.");
-});
-
-app.get("/test/", (req, res) => {
-  res.send("This is /test/ route.");
-});
-
-app.get("/api/data", (req, res) => {
-  const data = {
-    text: '<script>alert("XSS")</script>',
-  };
-  res.json(data);
-});
-
-app.disable("trust proxy");
-console.log(app.get("trust proxy"));
-console.log(app.disabled("trust proxy"));
-
-app.enable("trust proxy");
-console.log(app.get("trust proxy"));
-console.log(app.enabled("trust proxy"));
-
-app.get("/ip", (req, res) => {
-  res.send(`Client IP: ${req.ip}`);
-});
-
-app.get("/hello/ok", (req, res) => res.send(`path: ${req.path}`));
-
-let userCredits = 5;
-app.get("/download", (req, res) => {
-  const options = {
-    dotfiles: "deny",
-  };
-  if (userCredits > 0) {
-    res.download(
-      path.join(__dirname, "./assets/images/Clouds.jpg"),
-      "image.jpg",
-      options,
-      (err) => {
-        if (err) {
-          console.error("Download failed:", err);
-        } else {
-          console.log("File downloaded successfully");
-          userCredits -= 1;
-        }
-      }
-    );
-  } else {
-    res.status(403).send("Not enough credits to download the file");
+app.post("/profile", upload.single("avatar"), (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).send("File not uploaded");
   }
-});
 
-app.set("jsonp callback name", "cb");
-app.get("/jsonp", (req, res) => {
-  res.jsonp({ user: "tobi" });
-});
-
-app.get("/old-route", (req, res) => {
-  res.redirect("/new-route");
-});
-
-app.get("/html-text", (req, res) => {
-  const buffer = Buffer.from("<h1>Hello World</h1>");
-  res.set("Content-Type", "text/html");
-  res.send(buffer);
-});
-
-app.get("/files/:name", (req, res, next) => {
-  const options = {
-    root: path.join(__dirname, "assets", "images"),
-    maxAge: "1d",
-    dotfiles: "deny",
-    headers: {
-      "x-Timestamp": Date.now(),
-      "x-sent": true,
-      "Content-Disposition": "inline",
-    },
-    lastModified: true,
-    cacheControl: true,
-    immutable: false,
-    acceptRanges: true,
-  };
-
-  const fileName = req.params.name;
-
-  res.sendFile(fileName, options, (err) => {
-    if (err) {
-      console.error("Error:", err);
-      res.status(err.status || 500).send("File not found");
-    } else {
-      console.log("File sent:", fileName);
-    }
-  });
-});
-
-app.get("/home-template", (req, res) => {
-  const locals = {
-    title: "My Express App",
-    isLoggedIn: true,
-    username: "rifat",
-    tasks: ["Task One", "Task Two", "Task Three"],
-  };
-
-  res.render("home", locals);
+  return res.redirect(`/assets/${req.file.filename}`);
 });
 
 module.exports = app;
