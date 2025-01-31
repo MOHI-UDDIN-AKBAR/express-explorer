@@ -1,34 +1,9 @@
 const express = require("express");
-const multer = require("multer");
+const Busboy = require("busboy");
 const path = require("path");
+const fs = require("fs");
+
 const app = express();
-
-const diskStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "assets"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + Math.round(Math.random() * 1e9);
-    const sanitizedName = file.originalname.replace(/[^a-z0-9.]/gi, "_");
-    cb(null, `${uniqueSuffix + sanitizedName}`);
-  },
-});
-
-const upload = multer({
-  storage: diskStorage,
-  limits: {
-    files: 1,
-    fileSize: 3 * 1024 * 1024,
-    parts: 4,
-    fields: 2,
-  },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image file are allowed"), false);
-    }
-    cb(null, true);
-  },
-});
 
 app.get("/", (req, res) => {
   res.send(`
@@ -51,21 +26,42 @@ app.get("/", (req, res) => {
 });
 
 app.post("/profile", (req, res) => {
-  const uploadMiddleware = upload.single("avatar");
-  uploadMiddleware(req, res, (err) => {
-    if (err) {
-      if (err instanceof multer.MulterError) {
-        return res.status(400).send(err.message);
-      }
-      return res.status(400).send(`Error: ${err.message}`);
-    }
+  const busboy = Busboy({ headers: req.headers });
+  const uploadsDir = path.join(__dirname, "assets");
 
-    if (!req.file) {
-      res.status(400).send("No file uploaded.");
-    }
-    console.log(`User is : `, req.body);
-    res.send("Form submitted successfully!");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+  }
+
+  busboy.on("file", (name, file, info) => {
+    const { filename, encoding, mimeType } = info;
+    console.log(
+      `File [${name}]: filename: %j, encoding: %j, mimeType: %j`,
+      filename,
+      encoding,
+      mimeType
+    );
+    const savePath = path.join(uploadsDir, filename);
+    const writeStream = fs.createWriteStream(savePath);
+
+    file
+      .on("data", (data) => {
+        console.log(`File [${name}] got ${data.length} bytes`);
+      })
+      .on("close", () => {
+        console.log(`File [${name}] done`);
+      });
+
+    file.pipe(writeStream);
   });
+  busboy.on("field", (name, val, info) => {
+    console.log(`Field [${name}]: value: %j`, val);
+  });
+  busboy.on("close", () => {
+    console.log("Done parsing form!");
+    res.send("file uploaded successful ! ");
+  });
+  req.pipe(busboy);
 });
 
 module.exports = app;
