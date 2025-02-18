@@ -4,6 +4,7 @@ const Busboy = require("busboy");
 const path = require("path");
 const fs = require("fs");
 const morgan = require("morgan");
+const winston = require("winston");
 
 const app = express();
 
@@ -25,11 +26,91 @@ const corsOptions = {
   maxAge: 86400,
   optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
 
 const customMorganFormats = `"User IP = :remote-addr"\n - "User = :remote-user"\n "Log at = [:date[clf]]"\n "Method = :method, Url = :url, HTTP version = :http-version"\n "Status code = :status"\n "Referrer = :referrer"\n "User agent = :user-agent"\n "Response size = :res[content-length]"\n "Response time = :response-time ms"\n`;
 
 app.use(morgan(customMorganFormats));
+const {
+  createLogger,
+  format: {
+    combine,
+    json,
+    simple,
+    splat,
+    timestamp,
+    printf,
+    colorize,
+    prettyPrint,
+    errors,
+  },
+  transports: { Console, File },
+} = winston;
+
+const customLevels = {
+  levels: {
+    critical: 0,
+    error: 1,
+    warn: 2,
+    info: 3,
+    debug: 4,
+    verbose: 5,
+    silly: 6,
+  },
+  colors: {
+    critical: "red",
+    error: "red",
+    warn: "yellow",
+    info: "green",
+    debug: "blue",
+    verbose: "cyan",
+    silly: "magenta",
+  },
+};
+
+winston.addColors(customLevels.colors);
+
+const customFormat = printf(({ timestamp, level, message, ...metadata }) => {
+  // console.log(metadata);
+
+  const info = {
+    method: metadata.req.method,
+    path: metadata.req.path,
+  };
+
+  delete metadata.req;
+
+  return JSON.stringify(
+    {
+      timestamp,
+      level,
+      message,
+      ...info,
+      application: "my-app",
+      environment: process.env.NODE_ENV,
+    },
+    null,
+    2
+  );
+});
+
+const logger = createLogger({
+  levels: customLevels.levels,
+  level: "info",
+  format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), customFormat),
+  transports: [
+    new Console(),
+    new File({
+      filename: path.join(__dirname, "combine.log"),
+    }),
+  ],
+});
+
+app.use((req, res, next) => {
+  logger.info("Request received", { req });
+  next();
+});
 
 app.get("/", (req, res) => {
   res.send(`
