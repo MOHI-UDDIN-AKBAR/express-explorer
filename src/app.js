@@ -3,6 +3,7 @@ const cors = require("cors");
 const Busboy = require("busboy");
 const path = require("path");
 const fs = require("fs");
+const morgan = require("morgan");
 
 const app = express();
 
@@ -25,6 +26,10 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+
+const customMorganFormats = `"User IP = :remote-addr"\n - "User = :remote-user"\n "Log at = [:date[clf]]"\n "Method = :method, Url = :url, HTTP version = :http-version"\n "Status code = :status"\n "Referrer = :referrer"\n "User agent = :user-agent"\n "Response size = :res[content-length]"\n "Response time = :response-time ms"\n`;
+
+app.use(morgan(customMorganFormats));
 
 app.get("/", (req, res) => {
   res.send(`
