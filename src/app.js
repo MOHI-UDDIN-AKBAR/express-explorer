@@ -72,21 +72,19 @@ const customLevels = {
 winston.addColors(customLevels.colors);
 
 const customFormat = printf(({ timestamp, level, message, ...metadata }) => {
-  // console.log(metadata);
+  if (metadata.req) {
+    metadata.method = metadata.req.method;
+    metadata.path = metadata.req.path;
 
-  const info = {
-    method: metadata.req.method,
-    path: metadata.req.path,
-  };
-
-  delete metadata.req;
+    delete metadata.req;
+  }
 
   return JSON.stringify(
     {
       timestamp,
       level,
       message,
-      ...info,
+      ...(metadata ?? {}),
       application: "my-app",
       environment: process.env.NODE_ENV,
     },
@@ -95,12 +93,46 @@ const customFormat = printf(({ timestamp, level, message, ...metadata }) => {
   );
 });
 
+const errorFormat = winston.format((info, opts) => {
+  if (info instanceof Error) {
+    return {
+      ...info,
+      message: info.message,
+      stack: info.stack,
+    };
+  }
+  return info;
+})(winston.format.errors({ stack: true }));
+
+const consoleTransport = new Console({
+  level: "debug",
+  format: combine(
+    colorize(),
+    timestamp({ format: "HH:mm:ss" }),
+    errorFormat,
+    printf(({ timestamp, level, message }) => {
+      console.log(message);
+      return `${timestamp} [${level}]: ${message}`;
+    })
+  ),
+  handleExceptions: true,
+});
+
+app.use((req, res, next) => {
+  logger.info("Request received", { req });
+  next();
+});
+
 const logger = createLogger({
   levels: customLevels.levels,
   level: "info",
-  format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), customFormat),
+  format: combine(
+    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    errors({ stack: true }),
+    customFormat
+  ),
   transports: [
-    new Console(),
+    consoleTransport,
     new File({
       filename: path.join(__dirname, "combine.log"),
     }),
@@ -111,6 +143,10 @@ app.use((req, res, next) => {
   logger.info("Request received", { req });
   next();
 });
+
+logger.info("Server started in development mode");
+logger.info("Hello", { name: "World" });
+logger.error(new Error("authenticated error"));
 
 app.get("/", (req, res) => {
   res.send(`
